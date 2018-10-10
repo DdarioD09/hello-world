@@ -8,8 +8,8 @@ esto quiere decir que se disminuya la cantidad de productos que son ofertados en
 # BUSCAR como consultar las fechas por un filtro de solo un mes (ejemplo todos los diciembres).
 
 --ver como vinculara la fecha de venta con el estado del producto
-nombre del producto (PRODUCTO)
 codigo de barras
+nombre del producto (PRODUCTO)
 fecha_venta
 punto_venta
 
@@ -21,9 +21,10 @@ stocks de este producto en bodega (DETALLE COMPRA)
 SELECT
 p.nom_prod "Producto", dv.cod_barras "Codigo de barras",  fv.fecha_vent "Fecha Venta", pv.nombre_pventa "Punto venta"
 FROM
-producto p, inventario i, factura_venta fv, detalle_vent dv, empleado e, punto_venta pv
+producto p, inventario i, detalle_vent dv, factura_venta fv, empleado e, punto_venta pv
 WHERE
-p.cod_prod = i.cod_prod AND i.cod_barras = dv.cod_barras AND dv.cod_fac_vent = fv.cod_fac_vent AND fv.id_emp = e.id_emp;
+p.cod_prod = i.cod_prod AND i.cod_barras = dv.cod_barras AND dv.cod_fac_vent = fv.cod_fac_vent AND fv.id_emp = e.id_emp AND e.cod_pventa = pv.cod_pventa;
+
 
 --La que fue para el proyecto--primera version prototipo
 SELECT
@@ -53,15 +54,18 @@ ubicacion geo
 punto_venta
 producto
 fecha compra
+dir punto_venta
 
 #CONSULTA--------------------------------------------------
-
+--termina ¿r las conexiones
 SELECT
-c.nombre_clie || ' ' || c.apellido_clie AS "Cliente",
-c.dir_clie "Dirección", pv.nombre_pventa "Punto venta", fv.fecha_vent "Fecha compra"
+fv.fecha_vent "Fecha compra", dv.cod_barras "Codigo barras", p.nom_prod "producto",
+c.nombre_clie || ' ' || c.apellido_clie AS "Cliente", c.dir_clie "Dirección cliente",
+pv.nombre_pventa "Punto venta", pv.dir_pventa "Dirección pventa"
 FROM
-cliente c, punto_venta pv, factura_venta fv, clie_punto cp 
+cliente c, punto_venta pv, factura_venta fv, clie_punto cp, detalle_vent dv, producto p, inventario i
 WHERE
+p.cod_prod = i.cod_prod AND i.cod_barras = dv.cod_barras AND dv.cod_fac_vent = fv.cod_fac_vent AND
 c.id_clie = cp.id_clie AND pv.cod_pventa = cp.cod_pventa AND c.id_clie = fv.id_clie;
 ---------------------------------------------------------------------------------------------------
 
@@ -80,6 +84,10 @@ punto_venta
 /* 3. Determinar el número de vendedores mínimo por temporada (anual) necesario para cumplir con la operación del supermercado. Se hará un fitlro por el cargo
 del empleado y se establecera un rango de 2 años que muestre la fecha de en que se efectuo la ventaa, el nombre del empleado y nombre del punto de venta en
 dicho rango temporal. */
+ 
+
+ --revisar la redaccion para incluir las horas exactas
+ --archivo start view
 
 Presente año y anterior
 id
@@ -88,16 +96,32 @@ fecha (meses)
 numero de ventas
 nombre punto de venta
 numero de empleados ventas
+--AGREGAR HORAS para saber el hoario de los trabajadores (turnos) y que tantos trabajadores deberian haber por turno segun esto y la temporada
+fecha venta (incluyendo horas y segundos)
+stock especifico vendido
+producto (nombre)
+punto de venta
+empleado (para filtro vendedores)
+cargo
+--agreagar horas minutos y segundos a las fechas de compras---------------------------------
+SELECT
+to_date(fv.fecha_vent,'dd-mm-yyyy HH:MI:SS') "Fecha compra", dv.cod_barras "Codigo barras", p.nom_prod "producto",
+pv.nombre_pventa "Punto venta", pv.dir_pventa "Dirección pventa"
+FROM
+producto p, inventario i, detalle_vent dv, factura_venta fv, empleado e, punto_venta pv
+WHERE
+p.cod_prod = i.cod_prod AND i.cod_barras = dv.cod_barras AND dv.cod_fac_vent = fv.cod_fac_vent 
+AND fv.id_emp = e.id_emp AND e.cod_pventa = pv.cod_pventa;
 --creo que la fecha de ingreso del empleado no es muy necesaria para esta consulta
 --Solo se desea ver los empleados que estan trabajando actualmente
 --entonces se deberia hacer un filtro que compare fechas de salida y la fecha actual?
 #CONSULTA--------------------------------------------------
 
 SELECT
-fv.fecha_vent "Fecha venta", e.nombre_emp || ' ' || e.apellido_emp AS "Vendedor",
-pv.nombre_pventa "Punto de Venta", e.fecha_ingreso "Fecha ingreso", e.fecha_salida "Fecha salida"
+e.fecha_ingreso "Fecha ingreso", e.fecha_salida "Fecha salida", e.nombre_emp || ' ' || e.apellido_emp AS "Vendedor",
+pv.nombre_pventa "Punto de Venta", 
 FROM
-factura_venta fv, empleado e, punto_venta pv, cargo cr
+empleado e, punto_venta pv, cargo cr
 WHERE
 pv.cod_pventa = e.cod_pventa AND e.id_emp = fv.id_emp AND cr.cod_carg = e.cod_carg
 AND cr.cod_carg = 10;
